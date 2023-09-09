@@ -1,0 +1,36 @@
+joint_to_cartesian_controller:
+  tf_prefix: {
+    type: string,
+    default_value: "",
+    description: "URDF tf prefix"
+  }
+  robot_base_link: {
+    type: string,
+    default_value: "base_link",
+    description: "Cartesian pose/twist base link"
+  }
+  end_effector_link: {
+    type: string,
+    default_value: "tool0",
+    description: "Cartesian pose/twist end_effector link"
+  }
+  pose_pub_name: {
+    type: string,
+    default_value: "current_pose",
+    description: "Pose topic name that will be published"
+  }
+  twist_pub_name: {
+    type: string,
+    default_value: "current_twist",
+    description: "Twist topic name that will be published"
+  }
+  joints: {
+    type: string_array,
+    default_value: [],
+    description: "joints in chain from base_link to end_effector_link"
+  }
+  state_interfaces: {
+    type: string_array,
+    default_value: [],
+    description: "state interface"
+  }

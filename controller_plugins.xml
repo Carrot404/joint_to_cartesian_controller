@@ -1,0 +1,8 @@
+<library path="joint_to_cartesian_controller">
+  <class name="joint_to_cartesian_controller/JointToCartesianController" type="joint_to_cartesian_controller::JointToCartesianController" base_class_type="controller_interface::ControllerInterface">
+    <description>
+      This controller converts joint positions to cartesian positions.
+    </description>
+  </class>
+
+</library>
