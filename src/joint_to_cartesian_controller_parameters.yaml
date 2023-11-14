@@ -16,12 +16,12 @@ joint_to_cartesian_controller:
   }
   pose_pub_name: {
     type: string,
-    default_value: "current_pose",
+    default_value: "~/current_pose",
     description: "Pose topic name that will be published"
   }
   twist_pub_name: {
     type: string,
-    default_value: "current_twist",
+    default_value: "~/current_twist",
     description: "Twist topic name that will be published"
   }
   joints: {
