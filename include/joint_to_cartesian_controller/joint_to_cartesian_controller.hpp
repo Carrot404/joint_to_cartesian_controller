@@ -17,7 +17,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include "controller_interface/controller_interface.hpp"
 #include <hardware_interface/loaned_state_interface.hpp>
-#include "realtime_tools/realtime_publisher.h"
+#include "realtime_tools/realtime_publisher.hpp"
 
 #include <kdl/kdl.hpp>
 #include <kdl/tree.hpp>
@@ -31,6 +31,7 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 
 #include "joint_to_cartesian_controller_parameters.hpp"
+#include "joint_to_cartesian_controller/one_euro_filter.hpp"
 
 namespace joint_to_cartesian_controller
 {
@@ -95,6 +96,11 @@ namespace joint_to_cartesian_controller
 
     realtime_tools::RealtimePublisherSharedPtr<geometry_msgs::msg::PoseStamped> m_feedback_pose_publisher;
     realtime_tools::RealtimePublisherSharedPtr<geometry_msgs::msg::TwistStamped> m_feedback_twist_publisher;
+
+    // One Euro Filter for cartesian velocity smoothing (6 DOF: linear + angular)
+    std::array<nano_controllers::OneEuroFilter, 6> m_velocity_filters;
+    KDL::Twist m_filtered_cartesian_velocity;
+    bool m_enable_velocity_filtering;
 
     bool m_initialized = {false};
     bool m_configured = {false};

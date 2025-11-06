@@ -196,6 +196,31 @@ namespace joint_to_cartesian_controller
         get_node()->create_publisher<geometry_msgs::msg::TwistStamped>(
             m_params.twist_pub_name, rclcpp::SystemDefaultsQoS()));
 
+    // Initialize velocity filtering
+    m_enable_velocity_filtering = m_params.twist_filter.enable;
+    if (m_enable_velocity_filtering)
+    {
+      RCLCPP_INFO(LOGGER, "Velocity filtering enabled with One Euro Filter");
+      RCLCPP_INFO(LOGGER, "  Frequency: %.1f Hz", m_params.twist_filter.freq);
+      RCLCPP_INFO(LOGGER, "  Min cutoff: %.2f Hz", m_params.twist_filter.min_cutoff);
+      RCLCPP_INFO(LOGGER, "  Beta: %.3f", m_params.twist_filter.beta);
+      RCLCPP_INFO(LOGGER, "  D cutoff: %.2f Hz", m_params.twist_filter.d_cutoff);
+
+      // Initialize 6 filters for linear (x,y,z) and angular (x,y,z) velocities
+      for (size_t i = 0; i < 6; ++i)
+      {
+        m_velocity_filters[i].setParameters(
+            m_params.twist_filter.freq,
+            m_params.twist_filter.min_cutoff,
+            m_params.twist_filter.beta,
+            m_params.twist_filter.d_cutoff);
+      }
+    }
+    else
+    {
+      RCLCPP_INFO(LOGGER, "Velocity filtering disabled");
+    }
+
     m_configured = true;
 
     return controller_interface::CallbackReturn::SUCCESS;
@@ -356,21 +381,43 @@ namespace joint_to_cartesian_controller
   void JointToCartesianController::publishStateFeedback()
   {
     rclcpp::Time now = get_node()->now();
+
+    // Publish pose (unfiltered)
     if (m_feedback_pose_publisher->trylock())
     {
-
       tf2::Stamped<KDL::Frame> stamped_pose = tf2::Stamped<KDL::Frame>(m_end_effector_pose, tf2::timeFromSec(now.seconds()), m_robot_base_link);
-
       m_feedback_pose_publisher->msg_ = tf2::toMsg(stamped_pose);
-
       m_feedback_pose_publisher->unlockAndPublish();
     }
+
+    // Publish twist (with optional filtering)
     if (m_feedback_twist_publisher->trylock())
     {
-      tf2::Stamped<KDL::Twist> stamped_twist = tf2::Stamped<KDL::Twist>(m_end_effector_vel.GetTwist(), tf2::timeFromSec(now.seconds()), m_robot_base_link);
+      KDL::Twist velocity_to_publish;
 
+      if (m_enable_velocity_filtering)
+      {
+        // Get raw velocity from forward kinematics
+        KDL::Twist raw_velocity = m_end_effector_vel.GetTwist();
+
+        // Apply One Euro Filter to each component
+        m_filtered_cartesian_velocity.vel.x(m_velocity_filters[0].filter(raw_velocity.vel.x()));
+        m_filtered_cartesian_velocity.vel.y(m_velocity_filters[1].filter(raw_velocity.vel.y()));
+        m_filtered_cartesian_velocity.vel.z(m_velocity_filters[2].filter(raw_velocity.vel.z()));
+        m_filtered_cartesian_velocity.rot.x(m_velocity_filters[3].filter(raw_velocity.rot.x()));
+        m_filtered_cartesian_velocity.rot.y(m_velocity_filters[4].filter(raw_velocity.rot.y()));
+        m_filtered_cartesian_velocity.rot.z(m_velocity_filters[5].filter(raw_velocity.rot.z()));
+
+        velocity_to_publish = m_filtered_cartesian_velocity;
+      }
+      else
+      {
+        // Use raw velocity without filtering
+        velocity_to_publish = m_end_effector_vel.GetTwist();
+      }
+
+      tf2::Stamped<KDL::Twist> stamped_twist = tf2::Stamped<KDL::Twist>(velocity_to_publish, tf2::timeFromSec(now.seconds()), m_robot_base_link);
       m_feedback_twist_publisher->msg_ = tf2::toMsg(stamped_twist);
-
       m_feedback_twist_publisher->unlockAndPublish();
     }
   }

@@ -34,3 +34,30 @@ joint_to_cartesian_controller:
     default_value: [],
     description: "state interface"
   }
+  twist_filter: {
+    enable: {
+      type: bool,
+      default_value: false,
+      description: "Enable One Euro Filter for cartesian velocity smoothing"
+    },
+    freq: {
+      type: double,
+      default_value: 125.0,
+      description: "Controller update frequency in Hz (used for One Euro Filter)"
+    },
+    min_cutoff: {
+      type: double,
+      default_value: 1.0,
+      description: "One Euro Filter minimum cutoff frequency in Hz (lower = more smoothing)"
+    },
+    beta: {
+      type: double,
+      default_value: 0.007,
+      description: "One Euro Filter speed coefficient (higher = more responsive to velocity changes)"
+    },
+    d_cutoff: {
+      type: double,
+      default_value: 1.0,
+      description: "One Euro Filter derivative cutoff frequency in Hz"
+    }
+  }
